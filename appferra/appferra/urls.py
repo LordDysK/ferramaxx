@@ -20,4 +20,7 @@ from web_ferramax import views
 urlpatterns = [
     path('admin/', admin.site.urls),
     path('',views.prueba,name='prueba')
+    #url transbak test
+    path('start/', views.start_payment, name='start_payment'),
+    path('callback/', views.payment_callback, name='payment_callback'),
 ]
