@@ -135,4 +135,4 @@ STATIC_URL = 'static/'
 DEFAULT_AUTO_FIELD = 'django.db.models.BigAutoField'
 
 
-ALLOWED_HOSTS = ['https://ferramaxx-production.up.railway.app/']
+ALLOWED_HOSTS = ['localhost','https://ferramaxx-production.up.railway.app']
