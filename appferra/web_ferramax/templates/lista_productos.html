@@ -1,5 +1,4 @@
 <!DOCTYPE html>
-<!DOCTYPE html>
 <html lang="es">
 <head>
     <meta charset="UTF-8">
@@ -9,6 +8,11 @@
 </head>
 <body>
     <div class="container mt-4">
+        <div class="row">
+            <div class="col-12 mb-4">
+                <a href="{% url 'ver_carrito' %}" class="btn btn-primary">Ver Carrito</a>
+            </div>
+        </div>
         <div class="row">
             {% for item in productos_con_datos %}
             <div class="col-md-4 mb-4">
@@ -21,7 +25,18 @@
                         <p class="card-text"><small class="text-muted">Categoría: {{ item.descripcion.Categoria }}</small></p>
                         <p class="card-text"><small class="text-muted">Cantidad disponible: {{ item.inventario.Cantidad }}</small></p>
                         <p class="card-text text-danger">Precio: ${{ item.inventario.Precio }}</p>
-                        <a href="{% url 'agregar_al_carrito' item.producto.CodigoProducto %}" class="btn btn-primary">Agregar al Carrito</a>
+                        {% if item.inventario.Cantidad > 0 %}
+                        <form method="POST" action="{% url 'agregar_al_carrito' item.producto.CodigoProducto %}">
+                            {% csrf_token %}
+                            <div class="form-group">
+                                <label for="cantidad_{{ item.producto.CodigoProducto }}">Cantidad</label>
+                                <input type="number" class="form-control" id="cantidad_{{ item.producto.CodigoProducto }}" name="cantidad" value="1" min="1" max="{{ item.inventario.Cantidad }}">
+                            </div>
+                            <button type="submit" class="btn btn-primary">Agregar al Carrito</button>
+                        </form>
+                        {% else %}
+                        <button class="btn btn-secondary" disabled>Sin Stock</button>
+                        {% endif %}
                     </div>
                 </div>
             </div>

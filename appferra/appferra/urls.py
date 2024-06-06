@@ -21,8 +21,9 @@ urlpatterns = [
     path('admin/', admin.site.urls),
     path('',views.prueba,name='prueba'),
     #url transbak test
-    path('start/', views.start_payment, name='start_payment'),
+    path('start_payment/', views.start_payment, name='start_payment'),
     path('callback/', views.payment_callback, name='payment_callback'),
+     path('convertir_precio/', views.convertir_precio, name='convertir_precio'),
     #test
     path('products/', views.product_list, name='product_list'),
     path('test1/', views.lista_productos, name='lista_productos'),

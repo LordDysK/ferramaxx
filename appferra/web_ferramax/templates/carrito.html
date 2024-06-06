@@ -5,6 +5,7 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Carrito de Compras</title>
     <link href="https://maxcdn.bootstrapcdn.com/bootstrap/4.0.0/css/bootstrap.min.css" rel="stylesheet">
+    <script src="https://code.jquery.com/jquery-3.2.1.min.js"></script>
 </head>
 <body>
     <div class="container mt-4">
@@ -14,8 +15,8 @@
                 <tr>
                     <th>Producto</th>
                     <th>Cantidad</th>
-                    <th>Precio</th>
-                    <th>Total</th>
+                    <th>Precio Unitario</th>
+                    <th>Subtotal</th>
                     <th>Acciones</th>
                 </tr>
             </thead>
@@ -27,17 +28,40 @@
                     <td>${{ item.precio }}</td>
                     <td>${{ item.total }}</td>
                     <td>
-                        <a href="{% url 'eliminar_del_carrito' item.producto.CodigoProducto %}" class="btn btn-danger">Eliminar</a>
+                        <form method="POST" action="{% url 'eliminar_del_carrito' item.producto.CodigoProducto %}">
+                            {% csrf_token %}
+                            <div class="form-group">
+                                <input type="number" class="form-control d-inline-block" name="cantidad" value="1" min="1" max="{{ item.cantidad }}" style="width: 80px;">
+                                <button type="submit" class="btn btn-danger">Eliminar</button>
+                            </div>
+                        </form>
                     </td>
                 </tr>
                 {% endfor %}
             </tbody>
         </table>
-        <h3>Total: ${{ total }}</h3>
+        <h3>Total en Dólares: $<span id="total-dolares">{{ total }}</span></h3>
+        <h3>Total en Pesos Chilenos: $<span id="total-pesos">Calculando...</span></h3>
         <a href="{% url 'lista_productos' %}" class="btn btn-primary">Seguir comprando</a>
+        <form method="POST" action="{% url 'start_payment' %}">
+            {% csrf_token %}
+            <input type="hidden" id="amount-clp" name="amount_clp" value="">
+            <input type="hidden" name="order_id" value="{{ request.session.session_key|slice:":26" }}">
+            <button type="submit" class="btn btn-success">Pagar</button>
+        </form>
     </div>
-    <script src="https://code.jquery.com/jquery-3.2.1.slim.min.js"></script>
-    <script src="https://cdnjs.cloudflare.com/ajax/libs/popper.js/1.12.9/umd/popper.min.js"></script>
-    <script src="https://maxcdn.bootstrapcdn.com/bootstrap/4.0.0/js/bootstrap.min.js"></script>
+    <script>
+        $(document).ready(function() {
+            const totalDolares = $("#total-dolares").text();
+            $.get("{% url 'convertir_precio' %}", { total: totalDolares }, function(data) {
+                if (data.total_pesos) {
+                    $("#total-pesos").text(data.total_pesos);
+                    $("#amount-clp").val(data.total_pesos);
+                } else {
+                    $("#total-pesos").text("Error al calcular");
+                }
+            });
+        });
+    </script>
 </body>
 </html>

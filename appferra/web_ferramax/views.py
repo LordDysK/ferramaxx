@@ -3,8 +3,11 @@ from django.conf import settings
 from .models import Payment
 from transbank.webpay.webpay_plus.transaction import Transaction
 import transbank.webpay.webpay_plus as webpay_plus
-from .models import Producto, Inventario, Descripcion, Carrito, ItemCarrito
-from django.contrib.auth.decorators import login_required
+from .models import Producto, Inventario, Descripcion, Carrito, ItemCarrito, models
+from django.http import HttpResponse
+import uuid
+import requests
+from django.http import JsonResponse, HttpResponse
 
 webpay_plus.commerce_code = settings.TRANSBANK_COMMERCE_CODE
 webpay_plus.api_key = settings.TRANSBANK_API_KEY
@@ -13,11 +16,23 @@ webpay_plus.environment = settings.TRANSBANK_ENVIRONMENT
 def prueba(request):
     return render(request, 'prueba.html')
 
+def obtener_tasa_de_cambio():
+    try:
+        response = requests.get("https://api.exchangerate-api.com/v4/latest/USD")
+        data = response.json()
+        tasa_cambio = data['rates']['CLP']
+        return tasa_cambio
+    except Exception as e:
+        print(f"Error al obtener la tasa de cambio: {e}")
+        return None
 
 def start_payment(request):
     if request.method == 'POST':
-        amount = request.POST.get('amount')
-        order_id = request.POST.get('order_id')
+        amount_clp = request.POST.get('amount_clp')
+        print(f'Amount CLP: {amount_clp}')  # Depuración
+
+        # Generar un ID de pedido único corto
+        order_id = str(uuid.uuid4())[:26]
         session_id = request.session.session_key
 
         # Asegúrate de que el session_id no esté vacío
@@ -28,25 +43,30 @@ def start_payment(request):
 
         transaction = Transaction()
         
-        response = transaction.create(
-            buy_order=order_id,
-            session_id=session_id,
-            amount=amount,
-            return_url='http://127.0.0.1:8000/callback/'
-        )
-        print(response)  # Depuración
+        try:
+            response = transaction.create(
+                buy_order=order_id,
+                session_id=session_id,
+                amount=amount_clp,
+                return_url='http://127.0.0.1:8000/callback/'
+            )
+            print(response)  # Depuración
 
-        # Almacenar el pago en la base de datos
-        payment = Payment.objects.create(
-            order_id=order_id,
-            amount=amount,
-            token=response['token']
-        )
-        
-        # Redirigir a la URL proporcionada en la respuesta
-        return redirect(response['url'] + '?token_ws=' + response['token'])
+            # Almacenar el pago en la base de datos
+            payment = Payment.objects.create(
+                order_id=order_id,
+                amount=amount_clp,
+                token=response['token']
+            )
+            
+            # Redirigir a la URL proporcionada en la respuesta
+            return redirect(response['url'] + '?token_ws=' + response['token'])
+        except Exception as e:
+            return HttpResponse(f"Error al iniciar el pago: {e}", status=400)
 
     return render(request, 'start_payment.html')
+
+
 
 def payment_callback(request):
     token = request.GET.get('token_ws')
@@ -60,7 +80,6 @@ def payment_callback(request):
         payment.save()
 
     return render(request, 'payment_callback.html', {'response': response})
-
 
 
 def product_list(request):
@@ -93,6 +112,8 @@ def product_list(request):
 from django.shortcuts import render
 from .models import Producto, Inventario, Descripcion
 
+
+
 def lista_productos(request):
     productos = Producto.objects.all()
     productos_con_datos = []
@@ -109,37 +130,45 @@ def lista_productos(request):
 def agregar_al_carrito(request, codigo_producto):
     producto = get_object_or_404(Producto, CodigoProducto=codigo_producto)
     inventario = get_object_or_404(Inventario, CodigoProducto=producto)
-    
-    if inventario.Cantidad > 0:
-        carrito = request.session.get('carrito', {})
 
-        if codigo_producto in carrito:
-            carrito[codigo_producto] += 1
+    if request.method == 'POST':
+        cantidad = int(request.POST.get('cantidad', 1))
+
+        if inventario.Cantidad >= cantidad:
+            carrito = request.session.get('carrito', {})
+
+            if codigo_producto in carrito:
+                carrito[codigo_producto] += cantidad
+            else:
+                carrito[codigo_producto] = cantidad
+            
+            inventario.Cantidad -= cantidad
+            inventario.save()
+            
+            request.session['carrito'] = carrito
         else:
-            carrito[codigo_producto] = 1
-        
-        inventario.Cantidad -= 1
-        inventario.save()
-        
-        request.session['carrito'] = carrito
+            return HttpResponse("No hay suficiente cantidad en inventario", status=400)
 
     return redirect('lista_productos')
 
 def eliminar_del_carrito(request, codigo_producto):
-    carrito = request.session.get('carrito', {})
-    producto = get_object_or_404(Producto, CodigoProducto=codigo_producto)
-    inventario = get_object_or_404(Inventario, CodigoProducto=producto)
-    
-    if codigo_producto in carrito:
-        if carrito[codigo_producto] > 1:
-            carrito[codigo_producto] -= 1
-        else:
-            del carrito[codigo_producto]
+    if request.method == 'POST':
+        cantidad = int(request.POST.get('cantidad', 1))
+        carrito = request.session.get('carrito', {})
+        producto = get_object_or_404(Producto, CodigoProducto=codigo_producto)
+        inventario = get_object_or_404(Inventario, CodigoProducto=producto)
         
-        inventario.Cantidad += 1
-        inventario.save()
+        if codigo_producto in carrito:
+            if carrito[codigo_producto] > cantidad:
+                carrito[codigo_producto] -= cantidad
+            else:
+                cantidad = carrito[codigo_producto]
+                del carrito[codigo_producto]
+            
+            inventario.Cantidad += cantidad
+            inventario.save()
 
-        request.session['carrito'] = carrito
+            request.session['carrito'] = carrito
 
     return redirect('ver_carrito')
 
@@ -151,12 +180,33 @@ def ver_carrito(request):
     for codigo_producto, cantidad in carrito.items():
         producto = get_object_or_404(Producto, CodigoProducto=codigo_producto)
         inventario = Inventario.objects.filter(CodigoProducto=producto).first()
+        subtotal = cantidad * inventario.Precio
         items.append({
             'producto': producto,
             'cantidad': cantidad,
             'precio': inventario.Precio,
-            'total': cantidad * inventario.Precio
+            'total': subtotal
         })
-        total += cantidad * inventario.Precio
+        total += subtotal
 
     return render(request, 'carrito.html', {'items': items, 'total': total})
+
+def convertir_precio(request):
+    if request.method == 'GET':
+        total_dolares = request.GET.get('total', None)
+        if total_dolares is not None:
+            try:
+                total_dolares = float(total_dolares)
+                tasa_cambio = obtener_tasa_de_cambio()
+                if tasa_cambio:
+                    total_pesos = total_dolares * tasa_cambio
+                    total_pesos_redondeado = round(total_pesos)
+                    return JsonResponse({'total_pesos': total_pesos_redondeado, 'tasa_cambio': tasa_cambio})
+                else:
+                    return JsonResponse({'error': 'Error al obtener la tasa de cambio'}, status=500)
+            except ValueError:
+                return JsonResponse({'error': 'Total inválido'}, status=400)
+        else:
+            return JsonResponse({'error': 'Falta el parámetro total'}, status=400)
+    else:
+        return JsonResponse({'error': 'Método no permitido'}, status=405)

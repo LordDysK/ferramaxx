@@ -1,6 +1,17 @@
 <!-- payments/templates/payments/payment_callback.html -->
 
-<h1>Payment Status</h1>
-<p>Amount: {{ response.amount }}</p>
-<p>Status: {{ response.status }}</p>
-<p>Order ID: {{ response.buy_order }}</p>
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Payment Status</title>
+</head>
+<body>
+    <h1>Payment Status</h1>
+    <p>Amount: {{ response.amount }}</p>
+    <p>Status: {{ response.status }}</p>
+    <p>Order ID: {{ response.buy_order }}</p>
+    <a href="{% url 'lista_productos' %}" class="btn btn-primary">Volver a la lista de productos</a>
+</body>
+</html>
