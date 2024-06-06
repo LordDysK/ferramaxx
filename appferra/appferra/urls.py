@@ -23,4 +23,6 @@ urlpatterns = [
     #url transbak test
     path('start/', views.start_payment, name='start_payment'),
     path('callback/', views.payment_callback, name='payment_callback'),
+    #test
+    path('products/', views.product_list, name='product_list'),
 ]

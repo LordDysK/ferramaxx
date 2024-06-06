@@ -3,6 +3,7 @@ from django.conf import settings
 from .models import Payment
 from transbank.webpay.webpay_plus.transaction import Transaction
 import transbank.webpay.webpay_plus as webpay_plus
+from .models import Producto, Inventario, Descripcion
 
 webpay_plus.commerce_code = settings.TRANSBANK_COMMERCE_CODE
 webpay_plus.api_key = settings.TRANSBANK_API_KEY
@@ -58,3 +59,32 @@ def payment_callback(request):
         payment.save()
 
     return render(request, 'payment_callback.html', {'response': response})
+
+
+
+""" def product_list(request):
+    productos = Producto.objects.all()
+    
+    product_data = []
+    for producto in Productos:
+        inventario = Inventario.objects.filter(CodigoProducto=producto).first()
+        descripcion = Descripcion.objects.filter(CodigoProducto=producto).first()
+        
+        if inventario and descripcion:
+            product_data.append({
+                'producto': producto,
+                'inventario': inventario,
+                'descripcion': descripcion
+            })
+    
+    # Imprimir datos para depuración
+    if not product_data:
+        print('No se encontraron productos.')
+    else:
+        for item in product_data:
+            print(f'Producto: {item["producto"].Nombre}, Inventario: {item["inventario"].Cantidad}, Descripcion: {item["descripcion"].Detalles}')
+
+    return render(request, 'base.html', {'product_data': product_data}) """
+def product_list(request):
+    productos = Producto.objects.all()  # Obtener todos los objetos del modelo Producto
+    return render(request, 'product_list.html', {'productos': productos})
