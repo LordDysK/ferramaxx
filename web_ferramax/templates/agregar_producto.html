@@ -1,0 +1,12 @@
+<!-- templates/agregar_producto.html -->
+
+<form method="post">
+    {% csrf_token %}
+    <label for="CodigoProducto">Código de Producto:</label>
+    <input type="text" id="CodigoProducto" name="CodigoProducto"><br>
+    <label for="Nombre">Nombre:</label>
+    <input type="text" id="Nombre" name="Nombre"><br>
+    <label for="Marca">Marca:</label>
+    <input type="text" id="Marca" name="Marca"><br>
+    <input type="submit" value="Agregar Producto">
+</form>

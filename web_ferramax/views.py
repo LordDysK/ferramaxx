@@ -138,6 +138,32 @@ def lista_productos(request):
         })
     return render(request, 'lista_productos.html', {'productos_con_datos': productos_con_datos})
 
+def agregar_producto(request):
+    if request.method == 'POST':
+        codigo_producto = request.POST.get('CodigoProducto')
+        nombre = request.POST.get('Nombre')
+        marca = request.POST.get('Marca')
+        producto = Producto.objects.create(CodigoProducto=codigo_producto, Nombre=nombre, Marca=marca)
+        producto.save()
+        return render(request, 'producto_agregado.html', {'producto': producto})
+    return render(request, 'agregar_producto.html')
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 def agregar_al_carrito(request, codigo_producto):
     producto = get_object_or_404(Producto, CodigoProducto=codigo_producto)
     inventario = get_object_or_404(Inventario, CodigoProducto=producto)

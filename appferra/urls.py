@@ -26,6 +26,7 @@ urlpatterns = [
      path('convertir_precio/', views.convertir_precio, name='convertir_precio'),
     #test
     path('products/', views.product_list, name='product_list'),
+    path('agregar_producto/', views.agregar_producto, name='agregar_producto'),
     path('', views.lista_productos, name='lista_productos'),
     path('agregar/<str:codigo_producto>/', views.agregar_al_carrito, name='agregar_al_carrito'),
     path('eliminar/<str:codigo_producto>/', views.eliminar_del_carrito, name='eliminar_del_carrito'),  # Asegúrate de que esta línea esté correcta
