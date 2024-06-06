@@ -1,4 +1,5 @@
 <!DOCTYPE html>
+<!DOCTYPE html>
 <html lang="es">
 <head>
     <meta charset="UTF-8">
@@ -9,15 +10,18 @@
 <body>
     <div class="container mt-4">
         <div class="row">
-            {% for producto in productos %}
+            {% for item in productos_con_datos %}
             <div class="col-md-4 mb-4">
                 <div class="card h-100">
-                    <img class="card-img-top" src="{{ producto.imagen_url }}" alt="{{ producto.nombre }}">
+
                     <div class="card-body">
-                        <h5 class="card-title">{{ producto.nombre }}</h5>
-                        <p class="card-text">{{ producto.descripcion }}</p>
-                        <p class="card-text"><small class="text-muted">Precio original: ${{ producto.precio_original }}</small></p>
-                        <p class="card-text text-danger">Precio descuento: ${{ producto.precio_descuento }} (-{{ producto.descuento }}%)</p>
+                        <h5 class="card-title">{{ item.producto.Nombre }}</h5>
+                        <h6 class="card-subtitle mb-2 text-muted">{{ item.producto.Marca }}</h6>
+                        <p class="card-text">{{ item.descripcion.Detalles }}</p>
+                        <p class="card-text"><small class="text-muted">Categoría: {{ item.descripcion.Categoria }}</small></p>
+                        <p class="card-text"><small class="text-muted">Cantidad disponible: {{ item.inventario.Cantidad }}</small></p>
+                        <p class="card-text text-danger">Precio: ${{ item.inventario.Precio }}</p>
+                        <a href="{% url 'agregar_al_carrito' item.producto.CodigoProducto %}" class="btn btn-primary">Agregar al Carrito</a>
                     </div>
                 </div>
             </div>
