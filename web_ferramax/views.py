@@ -8,6 +8,7 @@ from django.http import HttpResponse
 import uuid
 import requests
 from django.http import JsonResponse, HttpResponse
+from django.contrib import messages
 
 webpay_plus.commerce_code = settings.TRANSBANK_COMMERCE_CODE
 webpay_plus.api_key = settings.TRANSBANK_API_KEY
@@ -79,8 +80,18 @@ def payment_callback(request):
         payment.status = 'paid'
         payment.save()
 
-    return render(request, 'payment_callback.html', {'response': response})
+        # Eliminar objetos del carrito
+        carrito = request.session.get('carrito', {})
+        for codigo_producto, cantidad in carrito.items():
+            eliminar_del_carrito(request, codigo_producto)
 
+        messages.success(request, "¡Pago autorizado! Los productos del carrito han sido eliminados.")
+    elif response['status'] == 'REJECTED':
+        messages.error(request, "¡Pago rechazado! Por favor, inténtelo nuevamente o contacte al soporte.")
+    else:
+        messages.error(request, "El pago no fue autorizado.")
+
+    return render(request, 'payment_callback.html', {'response': response})
 
 def product_list(request):
     productos = Producto.objects.all()
