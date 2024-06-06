@@ -24,9 +24,8 @@ COPY . .
 ENV DJANGO_SETTINGS_MODULE=appferra.settings
 ENV PYTHONUNBUFFERED=1
 
-# Ejecutar las migraciones y recolectar los archivos estáticos
+# Ejecutar las migraciones
 RUN /opt/venv/bin/python manage.py migrate --noinput
-RUN /opt/venv/bin/python manage.py collectstatic --noinput
 
 # Exponer el puerto en el que Django va a ejecutarse
 EXPOSE 8000
